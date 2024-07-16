@@ -11,7 +11,7 @@ export default function DoctorSignupScreen({ navigation }) {
 
   const handleSignup = async () => {
     try {
-      const response = await fetch('http://192.168.2.25:3000/signup', {
+      const response = await fetch('http://192.168.10.227:3000/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

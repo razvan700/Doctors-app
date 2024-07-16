@@ -12,7 +12,7 @@ export default function AddPatientScreen({ navigation }) {
 
   const handleAddPatient = async () => {
     try {
-      const response = await fetch('http://192.168.2.25:3000/add-patient', {
+      const response = await fetch('http://192.168.10.227:3000/add-patient', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

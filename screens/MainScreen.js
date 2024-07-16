@@ -13,7 +13,7 @@ export default function MainScreen({ navigation }) {
 
   const fetchPatients = async () => {
     try {
-      const response = await fetch('http://192.168.2.25:3000/patients');
+      const response = await fetch('http://192.168.10.227:3000/patients');
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
@@ -34,18 +34,16 @@ export default function MainScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Main Page</Text>
-      <View style={styles.pickerContainer}>
-        <Picker
-          selectedValue={selectedPatient}
-          style={styles.picker}
-          onValueChange={(itemValue) => setSelectedPatient(itemValue)}
-        >
-          <Picker.Item label="Select a patient" value="" />
-          {patients.map((patient) => (
-            <Picker.Item key={patient.id} label={`${patient.name} ${patient.surname}`} value={patient.id} />
-          ))}
-        </Picker>
-      </View>
+      <Picker
+        selectedValue={selectedPatient}
+        style={styles.picker}
+        onValueChange={(itemValue) => setSelectedPatient(itemValue)}
+      >
+        <Picker.Item label="Select a patient" value="" />
+        {patients.map((patient) => (
+          <Picker.Item key={patient.id} label={`${patient.name} ${patient.surname}`} value={patient.id} />
+        ))}
+      </Picker>
       <Image
         source={{ uri: 'https://i1.wp.com/a-fib.com/wp-content/uploads/2012/08/Schematic-diagram-of-normal-sinus-rhythm-for-a-human-heart-as-seen-on-ECG-Wikipedia-free-to-use.png' }}
         style={styles.ecg}
@@ -53,7 +51,19 @@ export default function MainScreen({ navigation }) {
       <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('AddPatient')}>
         <Text style={styles.buttonText}>Add Patient</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('PatientChart')}>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => {
+          if (selectedPatient) {
+            navigation.navigate('PatientChart', {
+              patientId: selectedPatient,
+              doctorId: 1, // Replace with the actual doctorId you have stored
+            });
+          } else {
+            Alert.alert('Error', 'Please select a patient first');
+          }
+        }}
+      >
         <Text style={styles.buttonText}>Patient Chart</Text>
       </TouchableOpacity>
     </View>
@@ -74,14 +84,10 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     color: '#333',
   },
-  pickerContainer: {
-    width: '100%',
-    // Do not apply any border or background color here
-  },
   picker: {
-    height: 200, // Ensure the picker wheel is visible
     width: '100%',
     color: '#007BFF', // Set text color for the picker items
+    backgroundColor: 'transparent', // Transparent background
   },
   ecg: {
     width: '100%',

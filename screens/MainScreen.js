@@ -1,15 +1,55 @@
-import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 
 export default function MainScreen({ navigation }) {
+  const [patients, setPatients] = useState([]);
+  const [selectedPatient, setSelectedPatient] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchPatients();
+  }, []);
+
+  const fetchPatients = async () => {
+    try {
+      const response = await fetch('http://192.168.2.25:3000/patients');
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        setPatients(data);
+      } else {
+        throw new Error('Response is not an array');
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', 'Could not fetch patients');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Main Page</Text>
-      <View style={styles.selector}>
-        <Text style={styles.label}>Select Patient:</Text>
-        <TextInput style={styles.input} placeholder="Enter patient name" placeholderTextColor="#aaa" />
+      <View style={styles.pickerContainer}>
+        <Picker
+          selectedValue={selectedPatient}
+          style={styles.picker}
+          onValueChange={(itemValue) => setSelectedPatient(itemValue)}
+        >
+          <Picker.Item label="Select a patient" value="" />
+          {patients.map((patient) => (
+            <Picker.Item key={patient.id} label={`${patient.name} ${patient.surname}`} value={patient.id} />
+          ))}
+        </Picker>
       </View>
-      <Image source={{ uri: 'https://www.example.com/ecg.png' }} style={styles.ecg} />
+      <Image
+        source={{ uri: 'https://i1.wp.com/a-fib.com/wp-content/uploads/2012/08/Schematic-diagram-of-normal-sinus-rhythm-for-a-human-heart-as-seen-on-ECG-Wikipedia-free-to-use.png' }}
+        style={styles.ecg}
+      />
       <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('AddPatient')}>
         <Text style={styles.buttonText}>Add Patient</Text>
       </TouchableOpacity>
@@ -32,22 +72,22 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 30,
+    color: '#333',
   },
-  label: {
-    fontSize: 18,
-    alignSelf: 'flex-start',
-    marginLeft: 10,
-    marginBottom: 5,
-  },
-  input: {
+  pickerContainer: {
     width: '100%',
-    height: 50,
-    borderColor: '#ccc',
-    borderWidth: 1,
+    // Do not apply any border or background color here
+  },
+  picker: {
+    height: 200, // Ensure the picker wheel is visible
+    width: '100%',
+    color: '#007BFF', // Set text color for the picker items
+  },
+  ecg: {
+    width: '100%',
+    height: 200,
     marginBottom: 20,
-    paddingLeft: 15,
-    borderRadius: 5,
-    backgroundColor: '#fff',
+    backgroundColor: '#eee',
   },
   button: {
     width: '100%',
@@ -62,15 +102,5 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#fff',
     fontWeight: 'bold',
-  },
-  selector: {
-    width: '100%',
-    marginBottom: 20,
-  },
-  ecg: {
-    width: '100%',
-    height: 200,
-    marginBottom: 20,
-    backgroundColor: '#eee',
   },
 });

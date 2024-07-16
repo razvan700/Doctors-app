@@ -67,6 +67,63 @@ app.post('/signup', async (req, res) => {
   }
 });
 
+// add patient endpoint
+app.post('/add-patient', async (req, res) => {
+  const { name, surname, age, birthDate, address } = req.body;
+
+  try {
+    const result = await pool.query(
+      'INSERT INTO patients (name, surname, age, birth_date, address) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [name, surname, age, birthDate, address]
+    );
+    res.status(200).json({ message: 'Patient added successfully', patient: result.rows[0] });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error adding patient' });
+  }
+});
+
+// get patients from the database endpoint
+app.get('/patients', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT id, name, surname FROM patients');
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error fetching patients' });
+  }
+});
+
+app.get('/patient/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const patient = await getPatientById(id); // Fetch patient details from your database
+    res.json(patient);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch patient data' });
+  }
+});
+
+app.get('/observations/:patientId', async (req, res) => {
+  try {
+    const { patientId } = req.params;
+    const observations = await getObservationsByPatientId(patientId); // Fetch observations from your database
+    res.json(observations);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch observations' });
+  }
+});
+
+app.post('/add-observation', async (req, res) => {
+  try {
+    const { id_doctor, id_patient, observation, date } = req.body;
+    await addObservation(id_doctor, id_patient, observation, date); // Add observation to your database
+    res.json({ message: 'Observation added successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to add observation' });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

@@ -12,7 +12,7 @@ const createTables = async () => {
   try {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS doctors (
-        id SERIAL PRIMARY KEY,
+        id_doctor SERIAL PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
         surname VARCHAR(100) NOT NULL,
         email VARCHAR(100) NOT NULL UNIQUE,
@@ -20,7 +20,7 @@ const createTables = async () => {
       );
 
       CREATE TABLE IF NOT EXISTS patients (
-        id SERIAL PRIMARY KEY,
+        id_doctor SERIAL PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
         surname VARCHAR(100) NOT NULL,
         age INT NOT NULL,
@@ -29,7 +29,7 @@ const createTables = async () => {
       );
 
       CREATE TABLE IF NOT EXISTS doctor_notes (
-        id SERIAL PRIMARY KEY,
+        id_notes SERIAL PRIMARY KEY,
         doctor_id INT NOT NULL REFERENCES doctors(id),
         patient_id INT NOT NULL REFERENCES patients(id),
         observation TEXT NOT NULL,

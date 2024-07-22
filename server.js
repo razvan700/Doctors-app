@@ -17,8 +17,6 @@ const pool = new Pool({
   port: 5432,
 });
 
-app.use(bodyParser.json());
-
 app.post('/login', async (req, res) => {
   const { name, password } = req.body;
   try {
@@ -41,7 +39,6 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// Doctor signup endpoint
 app.post('/signup', async (req, res) => {
   const { name, surname, email, password } = req.body;
 
@@ -50,10 +47,7 @@ app.post('/signup', async (req, res) => {
   }
 
   try {
-    // Hash the password
     const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-    // Insert the new doctor into the database
     const result = await pool.query(
       'INSERT INTO doctors (name, surname, email, password) VALUES ($1, $2, $3, $4) RETURNING *',
       [name, surname, email, hashedPassword]
@@ -67,7 +61,6 @@ app.post('/signup', async (req, res) => {
   }
 });
 
-// add patient endpoint
 app.post('/add-patient', async (req, res) => {
   const { name, surname, age, birthDate, address } = req.body;
 
@@ -83,7 +76,6 @@ app.post('/add-patient', async (req, res) => {
   }
 });
 
-// get patients from the database endpoint
 app.get('/patients', async (req, res) => {
   try {
     const result = await pool.query('SELECT id, name, surname FROM patients');
@@ -97,9 +89,14 @@ app.get('/patients', async (req, res) => {
 app.get('/patient/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const patient = await getPatientById(id); // Fetch patient details from your database
-    res.json(patient);
+    console.log(`Fetching patient data for ID: ${id}`);
+    const result = await pool.query('SELECT * FROM patients WHERE id = $1', [parseInt(id, 10)]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Patient not found' });
+    }
+    res.status(200).json(result.rows[0]);
   } catch (error) {
+    console.error('Error fetching patient data:', error);
     res.status(500).json({ message: 'Failed to fetch patient data' });
   }
 });
@@ -107,19 +104,25 @@ app.get('/patient/:id', async (req, res) => {
 app.get('/observations/:patientId', async (req, res) => {
   try {
     const { patientId } = req.params;
-    const observations = await getObservationsByPatientId(patientId); // Fetch observations from your database
-    res.json(observations);
+    console.log(`Fetching observations for patient ID: ${patientId}`);
+    const result = await pool.query('SELECT * FROM doctor_notes WHERE patient_id = $1', [parseInt(patientId, 10)]);
+    res.status(200).json(result.rows);
   } catch (error) {
+    console.error('Error fetching observations:', error);
     res.status(500).json({ message: 'Failed to fetch observations' });
   }
 });
 
 app.post('/add-observation', async (req, res) => {
   try {
-    const { id_doctor, id_patient, observation, date } = req.body;
-    await addObservation(id_doctor, id_patient, observation, date); // Add observation to your database
-    res.json({ message: 'Observation added successfully' });
+    const { doctor_id, patient_id, observation, date } = req.body;
+    const result = await pool.query(
+      'INSERT INTO doctor_notes (doctor_id, patient_id, observation, created_at) VALUES ($1, $2, $3, $4) RETURNING *',
+      [doctor_id, patient_id, observation, date]
+    );
+    res.status(200).json({ message: 'Observation added successfully', observation: result.rows[0] });
   } catch (error) {
+    console.error('Error adding observation:', error);
     res.status(500).json({ message: 'Failed to add observation' });
   }
 });

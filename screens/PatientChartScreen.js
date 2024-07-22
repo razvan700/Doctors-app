@@ -17,58 +17,66 @@ export default function PatientChart({ route, navigation }) {
 
   const fetchPatientData = async () => {
     try {
-      const response = await fetch(`http://192.168.10.227:3000/patient/${patientId}`);
+      console.log(`Fetching patient data for ID: ${patientId}`);
+      const response = await fetch(`http://192.168.0.115:3000/patient/${patientId}`);
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
       const data = await response.json();
+      console.log('Patient data:', data);
       setPatient(data);
     } catch (error) {
-      console.error(error);
+      console.error('Error fetching patient data:', error);
       Alert.alert('Error', 'Could not fetch patient data');
     }
   };
 
   const fetchObservations = async () => {
     try {
-      const response = await fetch(`http://192.168.10.227:3000/observations/${patientId}`);
+      console.log(`Fetching observations for patient ID: ${patientId}`);
+      const response = await fetch(`http://192.168.0.115:3000/observations/${patientId}`);
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
       const data = await response.json();
+      console.log('Observations:', data);
       setObservations(data);
     } catch (error) {
-      console.error(error);
+      console.error('Error fetching observations:', error);
       Alert.alert('Error', 'Could not fetch observations');
     }
   };
 
   const handleObservationSubmit = async () => {
     try {
-      const response = await fetch('http://192.168.10.227:3000/add-observation', {
+      console.log('Submitting observation:', observation);
+      const response = await fetch('http://192.168.0.115:3000/add-observation', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          id_doctor: doctorId,
-          id_patient: patientId,
+          doctor_id: doctorId,
+          patient_id: patientId,
           observation,
           date: new Date().toISOString(),
         }),
       });
 
-      const result = await response.json();
-
-      if (response.ok) {
-        Alert.alert('Success', 'Observation added successfully');
-        setObservation('');
-        fetchObservations();  // Refresh the list of observations
-      } else {
-        throw new Error(result.message || 'Failed to add observation');
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('Error response:', error);
+        throw new Error(`Failed to add observation: ${response.statusText}`);
       }
+
+      const result = await response.json();
+      console.log('Server response:', result);
+
+      Alert.alert('Success', 'Observation added successfully');
+      setObservation('');
+      fetchObservations();  // Refresh the list of observations
     } catch (error) {
-      console.error(error);
+      console.error('Error adding observation:', error);
       Alert.alert('Error', 'Could not add observation');
     }
   };
@@ -91,15 +99,18 @@ export default function PatientChart({ route, navigation }) {
           <Text style={styles.subHeader}>Patient Details</Text>
           <Text style={styles.infoText}>Name: {patient.name} {patient.surname}</Text>
           <Text style={styles.infoText}>Age: {patient.age}</Text>
-          <Text style={styles.infoText}>Sex: {patient.sex}</Text>
           <Text style={styles.infoText}>Birth Date: {patient.birth_date}</Text>
           <Text style={styles.subHeader}>Observations</Text>
-          {observations.map((obs) => (
-            <View key={obs.id_note} style={styles.observation}>
-              <Text style={styles.observationText}>{obs.observation}</Text>
-              <Text style={styles.observationDate}>{new Date(obs.date).toLocaleDateString()}</Text>
-            </View>
-          ))}
+          {observations.length > 0 ? (
+            observations.map((obs) => (
+              <View key={obs.id_notes} style={styles.observation}>
+                <Text style={styles.observationText}>{obs.observation}</Text>
+                <Text style={styles.observationDate}>{new Date(obs.created_at).toLocaleDateString()}</Text>
+              </View>
+            ))
+          ) : (
+            <Text style={styles.infoText}>No observations found</Text>
+          )}
           <TextInput
             style={styles.input}
             value={observation}

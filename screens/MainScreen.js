@@ -1,8 +1,11 @@
+// screens/MainScreen.js
+
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 
-export default function MainScreen({ navigation }) {
+export default function MainScreen({ route, navigation }) {
+  const { doctorId } = route.params; // Retrieve the doctor's ID from the route parameters
   const [patients, setPatients] = useState([]);
   const [selectedPatient, setSelectedPatient] = useState('');
   const [loading, setLoading] = useState(true);
@@ -13,7 +16,7 @@ export default function MainScreen({ navigation }) {
 
   const fetchPatients = async () => {
     try {
-      const response = await fetch('http://192.168.10.227:3000/patients');
+      const response = await fetch('http://192.168.0.115:3000/patients');
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
@@ -57,7 +60,7 @@ export default function MainScreen({ navigation }) {
           if (selectedPatient) {
             navigation.navigate('PatientChart', {
               patientId: selectedPatient,
-              doctorId: 1, // Replace with the actual doctorId you have stored
+              doctorId: doctorId, // Pass the doctorId
             });
           } else {
             Alert.alert('Error', 'Please select a patient first');

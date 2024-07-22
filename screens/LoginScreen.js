@@ -9,7 +9,7 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = async () => {
     try {
-      const response = await fetch('http://192.168.10.227:3000/login', {
+      const response = await fetch('http://192.168.0.115:3000/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -20,9 +20,8 @@ export default function LoginScreen({ navigation }) {
       const result = await response.json();
 
       if (response.status === 200) {
-        navigation.navigate('Main'); // Navigate to Main screen on successful login
+        navigation.navigate('Main', { doctorId: result.doctorId }); // Pass the doctor's ID
       } else {
-        // Handle failed login without using alerts
         console.error('Login Failed:', result.message);
       }
     } catch (error) {

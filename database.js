@@ -27,4 +27,24 @@ const getDoctors = async () => {
   }
 };
 
+const getObservations = async () => {
+    try {
+        const res = await db.query('SELECT * FROM doctor_notes');
+        console.log(res.rows);
+    }catch (err) {
+         console.error(err);
+       }
+};
+
+const getPatients = async () => {
+    try {
+        const res = await db.query('SELECT * FROM patients');
+        console.log(res.rows);
+    }catch (err) {
+         console.error(err);
+       }
+};
+
+getPatients();
+getObservations();
 getDoctors();

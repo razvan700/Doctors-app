@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
-import * as Speech from 'expo-speech';
+import { Audio } from 'expo-av';
+import * as FileSystem from 'expo-file-system';
 
 export default function PatientChartScreen({ route, navigation }) {
   const { patientId, doctorId } = route.params || {};
@@ -8,6 +9,8 @@ export default function PatientChartScreen({ route, navigation }) {
   const [observations, setObservations] = useState([]);
   const [observation, setObservation] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recording, setRecording] = useState(null);
 
   useEffect(() => {
     console.log('Patient ID from route:', patientId);
@@ -104,17 +107,71 @@ export default function PatientChartScreen({ route, navigation }) {
     }
   };
 
-  const startVoiceRecognition = () => {
-    Speech.speak('Please dictate your observation after the beep.', {
-      onDone: () => {
-        // Simulating speech recognition here by setting a fixed observation
-        setTimeout(() => {
-          const simulatedObservation = 'Simulated observation from voice input';
-          setObservation(simulatedObservation);
-        }, 2000);  // Simulate a delay for voice input
-      }
-    });
+  const startRecording = async () => {
+    try {
+      console.log('Requesting permissions..');
+      await Audio.requestPermissionsAsync();
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+      console.log('Starting recording..');
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY
+      );
+      setRecording(recording);
+      setIsRecording(true);
+      console.log('Recording started');
+    } catch (err) {
+      console.error('Failed to start recording', err);
+    }
   };
+
+  const stopRecording = async () => {
+    console.log('Stopping recording..');
+    setRecording(null);
+    await recording.stopAndUnloadAsync();
+    const uri = recording.getURI();
+    console.log('Recording stopped and stored at', uri);
+    setIsRecording(false);
+    sendToServer(uri);
+  };
+
+const sendToServer = async (uri) => {
+  try {
+    const formData = new FormData();
+    formData.append('file', {
+      uri,
+      type: 'audio/m4a',
+      name: 'speech.m4a',
+    });
+
+    const response = await fetch('http://192.168.0.115:3000/convert', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const result = await response.json();
+    console.log('Wit.ai response:', result);
+
+    // Extract the text from the parsed response
+    const transcriptions = result.map(item => item.text).filter(text => text);
+    if (transcriptions.length > 0) {
+      // Join and remove duplicate consecutive words
+      const combinedText = transcriptions.join(' ');
+      const uniqueWords = combinedText.split(' ').filter((item, pos, self) => self.indexOf(item) === pos);
+      const finalText = uniqueWords.join(' ');
+
+      setObservation(finalText);
+    } else {
+      Alert.alert('Error', 'Could not transcribe the audio');
+    }
+  } catch (error) {
+    console.error('Error sending audio to server', error);
+    Alert.alert('Error', 'Could not transcribe the audio');
+  }
+};
+
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -145,8 +202,11 @@ export default function PatientChartScreen({ route, navigation }) {
               onChangeText={setObservation}
               placeholder="Enter observation"
             />
-            <TouchableOpacity style={styles.voiceButton} onPress={startVoiceRecognition}>
-              <Text style={styles.buttonText}>Start Voice Recognition</Text>
+            <TouchableOpacity
+              style={styles.voiceButton}
+              onPress={isRecording ? stopRecording : startRecording}
+            >
+              <Text style={styles.buttonText}>{isRecording ? 'Stop Recording' : 'Start Voice Recognition'}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.button} onPress={handleObservationSubmit}>
               <Text style={styles.buttonText}>Add Observation</Text>

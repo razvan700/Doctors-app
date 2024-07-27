@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, Alert, ActivityIndicator } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -54,10 +54,11 @@ export default function MainScreen({ route, navigation }) {
           <Picker.Item key={patient.id} label={`${patient.name} ${patient.surname}`} value={patient.id} />
         ))}
       </Picker>
-      <Image
-        source={{ uri: 'https://i1.wp.com/a-fib.com/wp-content/uploads/2012/08/Schematic-diagram-of-normal-sinus-rhythm-for-a-human-heart-as-seen-on-ECG-Wikipedia-free-to-use.png' }}
-        style={styles.ecg}
-      />
+      {loading ? (
+        <ActivityIndicator size="large" color="#007BFF" />
+      ) : (
+        <Image source={require('../assets/ecg_plot.png')} style={styles.ecg} />
+      )}
       <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('AddPatient')}>
         <Text style={styles.buttonText}>Add Patient</Text>
       </TouchableOpacity>

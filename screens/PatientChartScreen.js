@@ -1,22 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import * as Speech from 'expo-speech';
 
-export default function PatientChart({ route, navigation }) {
+export default function PatientChartScreen({ route, navigation }) {
   const { patientId, doctorId } = route.params || {};
   const [patient, setPatient] = useState({});
   const [observations, setObservations] = useState([]);
   const [observation, setObservation] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    console.log('Patient ID from route:', patientId);
+    console.log('Doctor ID from route:', doctorId);
+
     if (patientId) {
       fetchPatientData();
       fetchObservations();
     }
-  }, [patientId]);
+  }, [patientId, doctorId]);
 
   const fetchPatientData = async () => {
     try {
+      setLoading(true);
       console.log(`Fetching patient data for ID: ${patientId}`);
       const response = await fetch(`http://192.168.0.115:3000/patient/${patientId}`);
       if (!response.ok) {
@@ -28,11 +33,14 @@ export default function PatientChart({ route, navigation }) {
     } catch (error) {
       console.error('Error fetching patient data:', error);
       Alert.alert('Error', 'Could not fetch patient data');
+    } finally {
+      setLoading(false);
     }
   };
 
   const fetchObservations = async () => {
     try {
+      setLoading(true);
       console.log(`Fetching observations for patient ID: ${patientId}`);
       const response = await fetch(`http://192.168.0.115:3000/observations/${patientId}`);
       if (!response.ok) {
@@ -44,23 +52,36 @@ export default function PatientChart({ route, navigation }) {
     } catch (error) {
       console.error('Error fetching observations:', error);
       Alert.alert('Error', 'Could not fetch observations');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleObservationSubmit = async () => {
     try {
+      setLoading(true);
       console.log('Submitting observation:', observation);
+      console.log('Doctor ID:', doctorId);  // Log the doctorId to verify it's correct
+      console.log('Patient ID:', patientId);
+
+      if (!doctorId) {
+        throw new Error('doctorId is undefined');
+      }
+
+      const payload = {
+        doctor_id: doctorId,
+        patient_id: patientId,
+        observation,
+        date: new Date().toISOString(),
+      };
+      console.log('Payload:', payload);
+
       const response = await fetch('http://192.168.0.115:3000/add-observation', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          doctor_id: doctorId,
-          patient_id: patientId,
-          observation,
-          date: new Date().toISOString(),
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -77,55 +98,63 @@ export default function PatientChart({ route, navigation }) {
       fetchObservations();  // Refresh the list of observations
     } catch (error) {
       console.error('Error adding observation:', error);
-      Alert.alert('Error', 'Could not add observation');
+      Alert.alert('Error', `Could not add observation: ${error.message}`);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const startVoiceRecognition = async () => {
-    Speech.speak('Please dictate your observation', {
+  const startVoiceRecognition = () => {
+    Speech.speak('Please dictate your observation after the beep.', {
       onDone: () => {
-        // Simulating speech recognition here
-        const simulatedObservation = 'Simulated observation from voice input';
-        setObservation(simulatedObservation);
-      },
+        // Simulating speech recognition here by setting a fixed observation
+        setTimeout(() => {
+          const simulatedObservation = 'Simulated observation from voice input';
+          setObservation(simulatedObservation);
+        }, 2000);  // Simulate a delay for voice input
+      }
     });
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.header}>Patient Chart</Text>
-      {patientId ? (
-        <>
-          <Text style={styles.subHeader}>Patient Details</Text>
-          <Text style={styles.infoText}>Name: {patient.name} {patient.surname}</Text>
-          <Text style={styles.infoText}>Age: {patient.age}</Text>
-          <Text style={styles.infoText}>Birth Date: {patient.birth_date}</Text>
-          <Text style={styles.subHeader}>Observations</Text>
-          {observations.length > 0 ? (
-            observations.map((obs) => (
-              <View key={obs.id_notes} style={styles.observation}>
-                <Text style={styles.observationText}>{obs.observation}</Text>
-                <Text style={styles.observationDate}>{new Date(obs.created_at).toLocaleDateString()}</Text>
-              </View>
-            ))
-          ) : (
-            <Text style={styles.infoText}>No observations found</Text>
-          )}
-          <TextInput
-            style={styles.input}
-            value={observation}
-            onChangeText={setObservation}
-            placeholder="Enter observation"
-          />
-          <TouchableOpacity style={styles.voiceButton} onPress={startVoiceRecognition}>
-            <Text style={styles.buttonText}>Start Voice Recognition</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.button} onPress={handleObservationSubmit}>
-            <Text style={styles.buttonText}>Add Observation</Text>
-          </TouchableOpacity>
-        </>
+      {loading ? (
+        <ActivityIndicator size="large" color="#007BFF" />
       ) : (
-        <Text style={styles.errorText}>No patient selected</Text>
+        patientId ? (
+          <>
+            <Text style={styles.subHeader}>Patient Details</Text>
+            <Text style={styles.infoText}>Name: {patient.name} {patient.surname}</Text>
+            <Text style={styles.infoText}>Age: {patient.age}</Text>
+            <Text style={styles.infoText}>Birth Date: {patient.birth_date}</Text>
+            <Text style={styles.subHeader}>Observations</Text>
+            {observations.length > 0 ? (
+              observations.map((obs) => (
+                <View key={obs.id_notes} style={styles.observation}>
+                  <Text style={styles.observationText}>{obs.observation}</Text>
+                  <Text style={styles.observationDate}>{new Date(obs.created_at).toLocaleDateString()}</Text>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.infoText}>No observations found</Text>
+            )}
+            <TextInput
+              style={styles.input}
+              value={observation}
+              onChangeText={setObservation}
+              placeholder="Enter observation"
+            />
+            <TouchableOpacity style={styles.voiceButton} onPress={startVoiceRecognition}>
+              <Text style={styles.buttonText}>Start Voice Recognition</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.button} onPress={handleObservationSubmit}>
+              <Text style={styles.buttonText}>Add Observation</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <Text style={styles.errorText}>No patient selected</Text>
+        )
       )}
     </ScrollView>
   );

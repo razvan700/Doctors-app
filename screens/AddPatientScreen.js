@@ -1,5 +1,3 @@
-// screens/AddPatientScreen.js
-
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 
@@ -20,14 +18,12 @@ export default function AddPatientScreen({ navigation }) {
         body: JSON.stringify({ name, surname, age, birthDate, address }),
       });
 
-      const responseText = await response.text();
-      console.log('Response:', responseText);
-
-      const result = JSON.parse(responseText);
+      const result = await response.json();
+      console.log('Response:', result);
 
       if (response.status === 200) {
         Alert.alert('Patient Added Successfully', result.message, [
-          { text: 'OK', onPress: () => navigation.navigate('Main') }
+          { text: 'OK', onPress: () => navigation.goBack() } // Use goBack() to return to the previous screen
         ]);
       } else {
         Alert.alert('Add Patient Failed', result.message);

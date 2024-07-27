@@ -1,8 +1,7 @@
-// screens/MainScreen.js
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function MainScreen({ route, navigation }) {
   const { doctorId } = route.params; // Retrieve the doctor's ID from the route parameters
@@ -11,11 +10,19 @@ export default function MainScreen({ route, navigation }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('Doctor ID in MainScreen:', doctorId);
     fetchPatients();
   }, []);
 
+  useFocusEffect(
+    useCallback(() => {
+      fetchPatients();
+    }, [])
+  );
+
   const fetchPatients = async () => {
     try {
+      setLoading(true);
       const response = await fetch('http://192.168.0.115:3000/patients');
       if (!response.ok) {
         throw new Error('Network response was not ok');

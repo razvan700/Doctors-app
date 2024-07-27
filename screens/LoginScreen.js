@@ -1,5 +1,3 @@
-// screens/LoginScreen.js
-
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
 
@@ -20,7 +18,8 @@ export default function LoginScreen({ navigation }) {
       const result = await response.json();
 
       if (response.status === 200) {
-        navigation.navigate('Main', { doctorId: result.doctorId }); // Pass the doctor's ID
+        console.log('Login successful, doctorId:', result.doctorId); // Log doctorId to verify
+        navigation.navigate('Main', { doctorId: result.doctorId });
       } else {
         console.error('Login Failed:', result.message);
       }

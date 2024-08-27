@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator, SafeAreaView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator, SafeAreaView, Image } from 'react-native';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import { Ionicons } from '@expo/vector-icons'; // Import Ionicons for the back icon
@@ -194,6 +194,10 @@ export default function PatientChartScreen({ route, navigation }) {
                 <Text style={styles.infoText}>Name: {patient.name} {patient.surname}</Text>
                 <Text style={styles.infoText}>Age: {patient.age}</Text>
                 <Text style={styles.infoText}>Birth Date: {patient.birth_date}</Text>
+                
+                {/* ECG Plot */}
+                <Image source={require('../assets/ecg_plot.png')} style={styles.ecg} />
+                
                 <Text style={styles.subHeader}>Observations</Text>
                 {observations.length > 0 ? (
                   observations.map((obs) => (
@@ -303,6 +307,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 5,
     marginBottom: 20,
+  },
+  ecg: {
+    width: '100%',
+    height: 200,
+    marginBottom: 20,
+    backgroundColor: '#eee',
   },
   observation: {
     width: '100%',

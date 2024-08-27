@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -57,7 +57,8 @@ export default function MainScreen({ route, navigation }) {
       {loading ? (
         <ActivityIndicator size="large" color="#007BFF" />
       ) : (
-        <Image source={require('../assets/ecg_plot.png')} style={styles.ecg} />
+        // Removed ECG plot from here
+        null
       )}
       <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('AddPatient')}>
         <Text style={styles.buttonText}>Add Patient</Text>
@@ -99,12 +100,6 @@ const styles = StyleSheet.create({
     width: '100%',
     color: '#007BFF', // Set text color for the picker items
     backgroundColor: 'transparent', // Transparent background
-  },
-  ecg: {
-    width: '100%',
-    height: 200,
-    marginBottom: 20,
-    backgroundColor: '#eee',
   },
   button: {
     width: '100%',

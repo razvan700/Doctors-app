@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons'; // Import Ionicons for the back icon
 
 export default function AddPatientScreen({ navigation }) {
   const [name, setName] = useState('');
@@ -10,7 +11,7 @@ export default function AddPatientScreen({ navigation }) {
 
   const handleAddPatient = async () => {
     try {
-      const response = await fetch('http://192.168.0.115:3000/add-patient', {
+      const response = await fetch('http://192.168.101.27:3000/add-patient', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -36,6 +37,12 @@ export default function AddPatientScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
+      {/* Back Button */}
+      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <Ionicons name="arrow-back" size={24} color="#000" />
+        <Text style={styles.backButtonText}>Back</Text>
+      </TouchableOpacity>
+
       <Text style={styles.header}>Add Patient</Text>
       <Text style={styles.label}>Name</Text>
       <TextInput
@@ -92,6 +99,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#f5f5f5',
     padding: 20,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    marginBottom: 20,
+  },
+  backButtonText: {
+    marginLeft: 5,
+    fontSize: 18,
+    color: '#000',
   },
   header: {
     fontSize: 24,

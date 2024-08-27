@@ -23,7 +23,7 @@ export default function MainScreen({ route, navigation }) {
   const fetchPatients = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://192.168.0.115:3000/patients');
+      const response = await fetch('http://192.168.101.27:3000/patients');
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }

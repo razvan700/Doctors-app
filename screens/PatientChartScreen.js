@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator, SafeAreaView } from 'react-native';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
+import { Ionicons } from '@expo/vector-icons'; // Import Ionicons for the back icon
 
 export default function PatientChartScreen({ route, navigation }) {
   const { patientId, doctorId } = route.params || {};
@@ -26,7 +27,7 @@ export default function PatientChartScreen({ route, navigation }) {
     try {
       setLoading(true);
       console.log(`Fetching patient data for ID: ${patientId}`);
-      const response = await fetch(`http://192.168.0.115:3000/patient/${patientId}`);
+      const response = await fetch(`http://192.168.101.27:3000/patient/${patientId}`);
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
@@ -45,7 +46,7 @@ export default function PatientChartScreen({ route, navigation }) {
     try {
       setLoading(true);
       console.log(`Fetching observations for patient ID: ${patientId}`);
-      const response = await fetch(`http://192.168.0.115:3000/observations/${patientId}`);
+      const response = await fetch(`http://192.168.101.27:3000/observations/${patientId}`);
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
@@ -79,7 +80,7 @@ export default function PatientChartScreen({ route, navigation }) {
       };
       console.log('Payload:', payload);
 
-      const response = await fetch('http://192.168.0.115:3000/add-observation', {
+      const response = await fetch('http://192.168.101.27:3000/add-observation', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -137,101 +138,129 @@ export default function PatientChartScreen({ route, navigation }) {
     sendToServer(uri);
   };
 
-const sendToServer = async (uri) => {
-  try {
-    const formData = new FormData();
-    formData.append('file', {
-      uri,
-      type: 'audio/m4a',
-      name: 'speech.m4a',
-    });
+  const sendToServer = async (uri) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', {
+        uri,
+        type: 'audio/m4a',
+        name: 'speech.m4a',
+      });
 
-    const response = await fetch('http://192.168.0.115:3000/convert', {
-      method: 'POST',
-      body: formData,
-    });
+      const response = await fetch('http://192.168.101.27:3000/convert', {
+        method: 'POST',
+        body: formData,
+      });
 
-    const result = await response.json();
-    console.log('Wit.ai response:', result);
+      const result = await response.json();
+      console.log('Wit.ai response:', result);
 
-    // Extract the text from the parsed response
-    const transcriptions = result.map(item => item.text).filter(text => text);
-    if (transcriptions.length > 0) {
-      // Join and remove duplicate consecutive words
-      const combinedText = transcriptions.join(' ');
-      const uniqueWords = combinedText.split(' ').filter((item, pos, self) => self.indexOf(item) === pos);
-      const finalText = uniqueWords.join(' ');
+      // Extract the text from the parsed response
+      const transcriptions = result.map(item => item.text).filter(text => text);
+      if (transcriptions.length > 0) {
+        // Join and remove duplicate consecutive words
+        const combinedText = transcriptions.join(' ');
+        const uniqueWords = combinedText.split(' ').filter((item, pos, self) => self.indexOf(item) === pos);
+        const finalText = uniqueWords.join(' ');
 
-      setObservation(finalText);
-    } else {
+        setObservation(finalText);
+      } else {
+        Alert.alert('Error', 'Could not transcribe the audio');
+      }
+    } catch (error) {
+      console.error('Error sending audio to server', error);
       Alert.alert('Error', 'Could not transcribe the audio');
     }
-  } catch (error) {
-    console.error('Error sending audio to server', error);
-    Alert.alert('Error', 'Could not transcribe the audio');
-  }
-};
-
+  };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.header}>Patient Chart</Text>
-      {loading ? (
-        <ActivityIndicator size="large" color="#007BFF" />
-      ) : (
-        patientId ? (
-          <>
-            <Text style={styles.subHeader}>Patient Details</Text>
-            <Text style={styles.infoText}>Name: {patient.name} {patient.surname}</Text>
-            <Text style={styles.infoText}>Age: {patient.age}</Text>
-            <Text style={styles.infoText}>Birth Date: {patient.birth_date}</Text>
-            <Text style={styles.subHeader}>Observations</Text>
-            {observations.length > 0 ? (
-              observations.map((obs) => (
-                <View key={obs.id_notes} style={styles.observation}>
-                  <Text style={styles.observationText}>{obs.observation}</Text>
-                  <Text style={styles.observationDate}>{new Date(obs.created_at).toLocaleDateString()}</Text>
-                </View>
-              ))
-            ) : (
-              <Text style={styles.infoText}>No observations found</Text>
-            )}
-            <TextInput
-              style={styles.input}
-              value={observation}
-              onChangeText={setObservation}
-              placeholder="Enter observation"
-            />
-            <TouchableOpacity
-              style={styles.voiceButton}
-              onPress={isRecording ? stopRecording : startRecording}
-            >
-              <Text style={styles.buttonText}>{isRecording ? 'Stop Recording' : 'Start Voice Recognition'}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.button} onPress={handleObservationSubmit}>
-              <Text style={styles.buttonText}>Add Observation</Text>
-            </TouchableOpacity>
-          </>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        {/* Back Button */}
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color="#000" />
+          <Text style={styles.backButtonText}>Back</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.header}>Patient Chart</Text>
+        
+        {loading ? (
+          <ActivityIndicator size="large" color="#007BFF" />
         ) : (
-          <Text style={styles.errorText}>No patient selected</Text>
-        )
-      )}
-    </ScrollView>
+          <ScrollView contentContainerStyle={styles.scrollContainer}>
+            {patientId ? (
+              <>
+                <Text style={styles.subHeader}>Patient Details</Text>
+                <Text style={styles.infoText}>Name: {patient.name} {patient.surname}</Text>
+                <Text style={styles.infoText}>Age: {patient.age}</Text>
+                <Text style={styles.infoText}>Birth Date: {patient.birth_date}</Text>
+                <Text style={styles.subHeader}>Observations</Text>
+                {observations.length > 0 ? (
+                  observations.map((obs) => (
+                    <View key={obs.id_notes} style={styles.observation}>
+                      <Text style={styles.observationText}>{obs.observation}</Text>
+                      <Text style={styles.observationDate}>{new Date(obs.created_at).toLocaleDateString()}</Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.infoText}>No observations found</Text>
+                )}
+                <TextInput
+                  style={styles.input}
+                  value={observation}
+                  onChangeText={setObservation}
+                  placeholder="Enter observation"
+                />
+                <TouchableOpacity
+                  style={styles.voiceButton}
+                  onPress={isRecording ? stopRecording : startRecording}
+                >
+                  <Text style={styles.buttonText}>{isRecording ? 'Stop Recording' : 'Start Voice Recognition'}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.button} onPress={handleObservationSubmit}>
+                  <Text style={styles.buttonText}>Add Observation</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <Text style={styles.errorText}>No patient selected</Text>
+            )}
+          </ScrollView>
+        )}
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: '#f5f5f5',
     padding: 20,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingTop: 10, // Added padding from the top
+  },
+  backButtonText: {
+    marginLeft: 5,
+    fontSize: 18,
+    color: '#000',
   },
   header: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 10,
+    alignSelf: 'center',
   },
   subHeader: {
     fontSize: 20,

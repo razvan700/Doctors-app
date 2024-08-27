@@ -14,7 +14,7 @@ const createTables = async () => {
       CREATE TABLE IF NOT EXISTS doctors (
         id_doctor SERIAL PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
-        surname VARCHAR(100) NOT NULL,
+        surname VARCHAR(100) NOT NULL,s
         email VARCHAR(100) NOT NULL UNIQUE,
         password VARCHAR(100) NOT NULL
       );
